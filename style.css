@@ -21,6 +21,150 @@
     
     --card-border-radius: 8px;
     --card-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+
+.table {
+    margin-bottom: 0;
+}
+
+.table th {
+    font-weight: 600;
+    color: #555;
+    border-top: none;
+    background-color: #f9f9f9;
+}
+
+.table td {
+    vertical-align: middle;
+}
+
+/* Страница пользователей */
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.page-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.filter-container {
+    background-color: white;
+    border-radius: var(--card-border-radius);
+    box-shadow: var(--card-shadow);
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+.pagination-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 20px;
+}
+
+.pagination-info {
+    color: #777;
+}
+
+/* Настройки */
+.settings-container {
+    background-color: white;
+    border-radius: var(--card-border-radius);
+    box-shadow: var(--card-shadow);
+    padding: 20px;
+}
+
+.settings-section {
+    margin-bottom: 30px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid #eee;
+}
+
+.settings-section:last-child {
+    border-bottom: none;
+}
+
+.settings-title {
+    font-size: 1.125rem;
+    font-weight: 600;
+    margin-bottom: 20px;
+}
+
+.settings-form {
+    max-width: 600px;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.settings-actions {
+    margin-top: 30px;
+    display: flex;
+    gap: 10px;
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+    .sidebar {
+        transform: translateX(-100%);
+    }
+    
+    .sidebar.open {
+        transform: translateX(0);
+    }
+    
+    .main-content {
+        margin-left: 0;
+    }
+    
+    .sidebar-toggle {
+        display: block;
+    }
+    
+    .stat-card, .chart-card {
+        min-width: 100%;
+    }
+}
+
+/* Утилиты */
+.btn-action {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    border: none;
+    margin-right: 5px;
+    cursor: pointer;
+}
+
+.btn-action.edit {
+    background-color: var(--primary-color);
+}
+
+.btn-action.delete {
+    background-color: var(--danger-color);
+}
+
+.btn-action:hover {
+    opacity: 0.9;
+}
+
+/* Анимации */
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.page.active {
+    animation: fadeIn 0.3s ease;
+}
 }
 
 * {
@@ -393,4 +537,9 @@ body {
 }
 
 .table-responsive {
-    margin-
+    margin-bottom: 20px;
+    background-color: white;
+    border-radius: var(--card-border-radius);
+    box-shadow: var(--card-shadow);
+    overflow: hidden;
+}
