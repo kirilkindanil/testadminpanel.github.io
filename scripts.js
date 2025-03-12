@@ -696,4 +696,622 @@ function exportUsersToCSV() {
             formatDate(user.birthDate),
             age,
             user.phoneNumber,
-            formattedReg
+            formattedRegDate
+        ];
+    });
+    
+    // Формирование CSV строки
+    let csvContent = 'data:text/csv;charset=utf-8,';
+    
+    // Добавление заголовка
+    csvContent += header.join(',') + '\r\n';
+    
+    // Добавление строк
+    rows.forEach(row => {
+        // Экранирование кавычек и запятых
+        const formattedRow = row.map(cell => {
+            // Если ячейка содержит запятую, заключаем в кавычки
+            if (String(cell).includes(',')) {
+                // Экранируем кавычки
+                return `"${String(cell).replace(/"/g, '""')}"`;
+            }
+            return cell;
+        });
+        
+        csvContent += formattedRow.join(',') + '\r\n';
+    });
+    
+    // Создание ссылки для скачивания
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement('a');
+    link.setAttribute('href', encodedUri);
+    link.setAttribute('download', `users_export_${new Date().toISOString().slice(0, 10)}.csv`);
+    document.body.appendChild(link);
+    
+    // Эмуляция клика
+    link.click();
+    
+    // Удаление ссылки
+    document.body.removeChild(link);
+    
+    showNotification('Данные успешно экспортированы', 'success');
+}
+
+/**
+ * Удаление всех пользователей
+ */
+function deleteAllUsers() {
+    const confirmModal = new bootstrap.Modal(document.getElementById('confirmModal'));
+    const confirmBtn = document.getElementById('confirmActionBtn');
+    const confirmMessage = document.getElementById('confirmMessage');
+    
+    confirmMessage.textContent = 'Вы уверены, что хотите удалить ВСЕХ пользователей? Это действие нельзя отменить!';
+    
+    // Удаляем предыдущие обработчики
+    confirmBtn.replaceWith(confirmBtn.cloneNode(true));
+    const newConfirmBtn = document.getElementById('confirmActionBtn');
+    
+    // Добавляем обработчик для подтверждения удаления
+    newConfirmBtn.addEventListener('click', function() {
+        allUsers = [];
+        filteredUsers = [];
+        
+        // Сохраняем изменения
+        localStorage.setItem('telegramFormUsers', JSON.stringify(allUsers));
+        
+        // Обновляем UI
+        updateStatistics();
+        renderUsersTable();
+        renderRecentUsers();
+        populateCityFilter();
+        updateCharts();
+        
+        confirmModal.hide();
+        showNotification('Все пользователи успешно удалены', 'success');
+    });
+    
+    // Показываем модальное окно
+    confirmModal.show();
+}
+
+/**
+ * Инициализация графиков
+ */
+function initCharts() {
+    // График регистраций
+    const registrationsCtx = document.getElementById('registrationsChart')?.getContext('2d');
+    if (registrationsCtx) {
+        window.registrationsChart = new Chart(registrationsCtx, {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [{
+                    label: 'Регистрации',
+                    data: [],
+                    borderColor: '#4570c1',
+                    backgroundColor: 'rgba(69, 112, 193, 0.1)',
+                    tension: 0.4,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            precision: 0
+                        }
+                    }
+                }
+            }
+        });
+    }
+    
+    // График популярных городов
+    const citiesCtx = document.getElementById('citiesChart')?.getContext('2d');
+    if (citiesCtx) {
+        window.citiesChart = new Chart(citiesCtx, {
+            type: 'doughnut',
+            data: {
+                labels: [],
+                datasets: [{
+                    data: [],
+                    backgroundColor: [
+                        '#4570c1',
+                        '#28a745',
+                        '#ffc107',
+                        '#dc3545',
+                        '#17a2b8',
+                        '#6c757d',
+                        '#fd7e14'
+                    ]
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'right'
+                    }
+                }
+            }
+        });
+    }
+    
+    // График распределения по возрастам
+    const ageDistributionCtx = document.getElementById('ageDistributionChart')?.getContext('2d');
+    if (ageDistributionCtx) {
+        window.ageDistributionChart = new Chart(ageDistributionCtx, {
+            type: 'bar',
+            data: {
+                labels: ['18-25', '26-35', '36-50', '51+'],
+                datasets: [{
+                    label: 'Количество пользователей',
+                    data: [0, 0, 0, 0],
+                    backgroundColor: [
+                        'rgba(69, 112, 193, 0.7)',
+                        'rgba(40, 167, 69, 0.7)',
+                        'rgba(255, 193, 7, 0.7)',
+                        'rgba(220, 53, 69, 0.7)'
+                    ]
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            precision: 0
+                        }
+                    }
+                }
+            }
+        });
+    }
+    
+    // График распределения по городам
+    const cityDistributionCtx = document.getElementById('cityDistributionChart')?.getContext('2d');
+    if (cityDistributionCtx) {
+        window.cityDistributionChart = new Chart(cityDistributionCtx, {
+            type: 'pie',
+            data: {
+                labels: [],
+                datasets: [{
+                    data: [],
+                    backgroundColor: [
+                        '#4570c1',
+                        '#28a745',
+                        '#ffc107',
+                        '#dc3545',
+                        '#17a2b8',
+                        '#6c757d',
+                        '#fd7e14'
+                    ]
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'right'
+                    }
+                }
+            }
+        });
+    }
+    
+    // График динамики регистраций
+    const registrationTrendsCtx = document.getElementById('registrationTrendsChart')?.getContext('2d');
+    if (registrationTrendsCtx) {
+        window.registrationTrendsChart = new Chart(registrationTrendsCtx, {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [{
+                    label: 'Регистрации',
+                    data: [],
+                    borderColor: '#4570c1',
+                    backgroundColor: 'rgba(69, 112, 193, 0.1)',
+                    tension: 0.4,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            precision: 0
+                        }
+                    }
+                }
+            }
+        });
+    }
+    
+    // Обновляем данные для графиков
+    updateCharts();
+}
+
+/**
+ * Обновление данных для графиков
+ */
+function updateCharts() {
+    updateRegistrationsChart();
+    updateCitiesChart();
+    updateAgeDistributionChart();
+    updateCityDistributionChart();
+    updateRegistrationTrendsChart();
+}
+
+/**
+ * Обновление графика регистраций
+ */
+function updateRegistrationsChart() {
+    const chart = window.registrationsChart;
+    if (!chart) return;
+    
+    // Получаем данные за последние 7 дней
+    const last7Days = [];
+    const counts = [];
+    
+    for (let i = 6; i >= 0; i--) {
+        const date = new Date();
+        date.setDate(date.getDate() - i);
+        date.setHours(0, 0, 0, 0);
+        
+        const formattedDate = date.toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit' });
+        last7Days.push(formattedDate);
+        
+        // Подсчет регистраций за этот день
+        const count = allUsers.filter(user => {
+            const regDate = new Date(user.registrationDate);
+            regDate.setHours(0, 0, 0, 0);
+            return regDate.getTime() === date.getTime();
+        }).length;
+        
+        counts.push(count);
+    }
+    
+    // Обновляем данные
+    chart.data.labels = last7Days;
+    chart.data.datasets[0].data = counts;
+    chart.update();
+}
+
+/**
+ * Обновление графика популярных городов
+ */
+function updateCitiesChart() {
+    const chart = window.citiesChart;
+    if (!chart) return;
+    
+    // Считаем количество пользователей по городам
+    const cityCounts = {};
+    allUsers.forEach(user => {
+        cityCounts[user.city] = (cityCounts[user.city] || 0) + 1;
+    });
+    
+    // Сортируем города по количеству пользователей
+    const sortedCities = Object.entries(cityCounts)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 5); // Только топ-5 городов
+    
+    // Подсчитываем остальных
+    const othersCount = allUsers.length - sortedCities.reduce((sum, [, count]) => sum + count, 0);
+    
+    // Формируем данные для графика
+    const labels = sortedCities.map(([city]) => city);
+    const data = sortedCities.map(([, count]) => count);
+    
+    // Добавляем "Другие", если есть
+    if (othersCount > 0) {
+        labels.push('Другие');
+        data.push(othersCount);
+    }
+    
+    // Обновляем данные
+    chart.data.labels = labels;
+    chart.data.datasets[0].data = data;
+    chart.update();
+}
+
+/**
+ * Обновление графика распределения по возрастам
+ */
+function updateAgeDistributionChart() {
+    const chart = window.ageDistributionChart;
+    if (!chart) return;
+    
+    // Подсчет пользователей по возрастным группам
+    const ageGroups = [0, 0, 0, 0]; // 18-25, 26-35, 36-50, 51+
+    
+    allUsers.forEach(user => {
+        const age = calculateAge(new Date(user.birthDate));
+        
+        if (age >= 18 && age <= 25) {
+            ageGroups[0]++;
+        } else if (age >= 26 && age <= 35) {
+            ageGroups[1]++;
+        } else if (age >= 36 && age <= 50) {
+            ageGroups[2]++;
+        } else if (age > 50) {
+            ageGroups[3]++;
+        }
+    });
+    
+    // Обновляем данные
+    chart.data.datasets[0].data = ageGroups;
+    chart.update();
+}
+
+/**
+ * Обновление графика распределения по городам
+ */
+function updateCityDistributionChart() {
+    const chart = window.cityDistributionChart;
+    if (!chart) return;
+    
+    // Считаем количество пользователей по городам
+    const cityCounts = {};
+    allUsers.forEach(user => {
+        cityCounts[user.city] = (cityCounts[user.city] || 0) + 1;
+    });
+    
+    // Сортируем города по количеству пользователей
+    const sortedCities = Object.entries(cityCounts)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 7); // Только топ-7 городов
+    
+    // Подсчитываем остальных
+    const othersCount = allUsers.length - sortedCities.reduce((sum, [, count]) => sum + count, 0);
+    
+    // Формируем данные для графика
+    const labels = sortedCities.map(([city]) => city);
+    const data = sortedCities.map(([, count]) => count);
+    
+    // Добавляем "Другие", если есть
+    if (othersCount > 0) {
+        labels.push('Другие');
+        data.push(othersCount);
+    }
+    
+    // Обновляем данные
+    chart.data.labels = labels;
+    chart.data.datasets[0].data = data;
+    chart.update();
+}
+
+/**
+ * Обновление графика динамики регистраций
+ */
+function updateRegistrationTrendsChart() {
+    const chart = window.registrationTrendsChart;
+    if (!chart) return;
+    
+    // Получаем данные за последние 30 дней
+    const last30Days = [];
+    const counts = [];
+    
+    for (let i = 29; i >= 0; i--) {
+        const date = new Date();
+        date.setDate(date.getDate() - i);
+        date.setHours(0, 0, 0, 0);
+        
+        const formattedDate = date.toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit' });
+        last30Days.push(formattedDate);
+        
+        // Подсчет регистраций за этот день
+        const count = allUsers.filter(user => {
+            const regDate = new Date(user.registrationDate);
+            regDate.setHours(0, 0, 0, 0);
+            return regDate.getTime() === date.getTime();
+        }).length;
+        
+        counts.push(count);
+    }
+    
+    // Обновляем данные
+    chart.data.labels = last30Days;
+    chart.data.datasets[0].data = counts;
+    chart.update();
+}
+
+/**
+ * Обновление графиков на странице аналитики
+ */
+function updateAnalyticsCharts() {
+    // Обновляем возрастное распределение
+    if (window.ageDistributionChart) {
+        updateAgeDistributionChart();
+    }
+    
+    // Обновляем распределение по городам
+    if (window.cityDistributionChart) {
+        updateCityDistributionChart();
+    }
+    
+    // Обновляем тренды регистраций
+    if (window.registrationTrendsChart) {
+        updateRegistrationTrendsChart();
+    }
+}
+
+/**
+ * Настройка обработчиков событий
+ */
+function setupEventListeners() {
+    // Обработчик для сохранения пользователя
+    const saveUserBtn = document.getElementById('saveUserBtn');
+    if (saveUserBtn) {
+        saveUserBtn.addEventListener('click', function() {
+            if (saveUser()) {
+                // Закрываем модальное окно, если сохранение успешно
+                const userModal = bootstrap.Modal.getInstance(document.getElementById('userModal'));
+                userModal.hide();
+            }
+        });
+    }
+    
+    // Обработчик для удаления пользователя из модального окна
+    const deleteUserBtn = document.getElementById('deleteUserBtn');
+    if (deleteUserBtn) {
+        deleteUserBtn.addEventListener('click', function() {
+            const userId = document.getElementById('userId').value;
+            
+            // Закрываем модальное окно
+            const userModal = bootstrap.Modal.getInstance(document.getElementById('userModal'));
+            userModal.hide();
+            
+            // Показываем подтверждение
+            openDeleteConfirmation(userId);
+        });
+    }
+    
+    // Обработчик для экспорта пользователей
+    const exportUsersBtn = document.getElementById('exportUsersBtn');
+    if (exportUsersBtn) {
+        exportUsersBtn.addEventListener('click', exportUsersToCSV);
+    }
+    
+    // Обработчик для удаления всех пользователей
+    const deleteAllUsersBtn = document.getElementById('deleteAllUsersBtn');
+    if (deleteAllUsersBtn) {
+        deleteAllUsersBtn.addEventListener('click', deleteAllUsers);
+    }
+    
+    // Обработчики для фильтров
+    const filterCity = document.getElementById('filterCity');
+    const filterAgeRange = document.getElementById('filterAgeRange');
+    const filterDate = document.getElementById('filterDate');
+    const applyFiltersBtn = document.getElementById('applyFiltersBtn');
+    const resetFiltersBtn = document.getElementById('resetFiltersBtn');
+    
+    if (applyFiltersBtn) {
+        applyFiltersBtn.addEventListener('click', applyFilters);
+    }
+    
+    if (resetFiltersBtn) {
+        resetFiltersBtn.addEventListener('click', function() {
+            if (filterCity) filterCity.value = '';
+            if (filterAgeRange) filterAgeRange.value = '';
+            if (filterDate) filterDate.value = '';
+            applyFilters();
+        });
+    }
+    
+    // Обработчик для поиска
+    const searchInput = document.getElementById('searchInput');
+    if (searchInput) {
+        searchInput.addEventListener('input', applyFilters);
+    }
+    
+    // Обработчик для кнопки сохранения настроек
+    const saveSettingsBtn = document.getElementById('saveSettingsBtn');
+    if (saveSettingsBtn) {
+        saveSettingsBtn.addEventListener('click', function() {
+            showNotification('Настройки успешно сохранены', 'success');
+        });
+    }
+    
+    // Обработчик для кнопки выхода
+    const logoutBtn = document.getElementById('logoutBtn');
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            // Простой редирект на страницу входа (в реальном приложении здесь должен быть полноценный logout)
+            window.location.href = 'login.html';
+        });
+    }
+}
+
+/**
+ * Вспомогательные функции
+ */
+
+/**
+ * Расчет возраста по дате рождения
+ */
+function calculateAge(birthDate) {
+    const today = new Date();
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const monthDiff = today.getMonth() - birthDate.getMonth();
+    
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+        age--;
+    }
+    
+    return age;
+}
+
+/**
+ * Форматирование даты
+ */
+function formatDate(dateString) {
+    if (!dateString) return '';
+    
+    const date = new Date(dateString);
+    return date.toLocaleDateString('ru-RU');
+}
+
+/**
+ * Показ уведомления
+ */
+function showNotification(message, type = 'info') {
+    // Проверка существования контейнера для уведомлений
+    let notificationContainer = document.getElementById('notificationContainer');
+    
+    if (!notificationContainer) {
+        notificationContainer = document.createElement('div');
+        notificationContainer.id = 'notificationContainer';
+        notificationContainer.style.position = 'fixed';
+        notificationContainer.style.top = '20px';
+        notificationContainer.style.right = '20px';
+        notificationContainer.style.zIndex = '9999';
+        document.body.appendChild(notificationContainer);
+    }
+    
+    // Создание уведомления
+    const notification = document.createElement('div');
+    notification.className = `alert alert-${type} alert-dismissible fade show`;
+    notification.role = 'alert';
+    notification.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    `;
+    
+    // Добавление в контейнер
+    notificationContainer.appendChild(notification);
+    
+    // Автоматическое скрытие через 3 секунды
+    setTimeout(() => {
+        notification.classList.remove('show');
+        setTimeout(() => {
+            notification.remove();
+        }, 300);
+    }, 3000);
+}
